@@ -555,7 +555,7 @@ def extract_features_xfeat(
     logger.debug("Computing XFeats")
     t = time.time()
 
-    output = xfeat.detectAndCompute(im, top_k = 4096)
+    output = xfeat.detectAndCompute(im, top_k = 4096)[0]
     points = output['keypoints'].numpy()
     desc = output['descriptors'].numpy()
 
