@@ -5,9 +5,11 @@ from typing import Any, Dict, Generator, List, Optional, Sized, Tuple
 
 import cv2
 import numpy as np
+import torch
 from opensfm import (
     context,
     feature_loader,
+    io,
     log,
     multiview,
     pairs_selection,
@@ -434,6 +436,23 @@ def _match_descriptors_impl(
             matches = match_brute_force_symmetric(d1, d2, overriden_config)
         else:
             matches = match_brute_force(d1, d2, overriden_config)
+    elif matcher_type == "LIGHTGLUE":
+        assert not symmetric_matching
+        # assume im1.shape == im2.shape
+        im = io.imread(im1)
+        xfeat = torch.hub.load(
+            'verlab/accelerated_features',
+            'XFeat',
+            pretrained = True,
+            top_k = 4096)
+        match_lightglue(
+            features_data1.points,
+            d1,
+            features_data2.points,
+            d2,
+            overriden_config,
+            shape = shape,
+            xfeat = xfeat)
     else:
         raise ValueError("Invalid matcher_type: {}".format(matcher_type))
 
@@ -746,6 +765,89 @@ def match_brute_force(
             if m.distance < ratio * n.distance:
                 good_matches.append(m)
     return _convert_matches_to_vector(good_matches)
+
+
+def match_lightglue(
+    p1: np.ndarray,
+    d1: np.ndarray,
+    p2: np.ndarray,
+    d2: np.ndarray,
+    config: Dict[str, Any],
+    maskij: Optional[np.ndarray] = None,
+    xfeat: Any = None,
+    shape: np.ndarray,
+) -> List[Tuple[int, int]]:
+    """LighterGlue feature matching from https://github.com/verlab/accelerated_features
+
+    Args:
+        p1: feature keypoints of the first image
+        d1: feature descriptors of the first image
+        p2: feature keypoints of the second image
+        d2: feature descriptors of the second image
+        config: config parameters
+        maskij: optional boolean mask of len(i descriptors) x len(j descriptors)
+        xfeat: XFeat model
+        shape: shape of original image
+    """
+    assert(xfeat is not None)
+
+    def _kpt_idxs(output, mkpts):
+      m = {}
+
+      for i, p in enumerate(mkpts):
+        x = np.floor(float(p[0]))
+        y = np.floor(float(p[1]))
+        m.setdefault(x, {})
+        m[x][y] = -1
+
+      c = 0
+
+      for i, p in enumerate(output['keypoints']):
+        x = np.floor(float(p[0]))
+        y = np.floor(float(p[1]))
+        if x not in m: continue
+        if y not in m[x]: continue
+        m[x][y] = i
+        c += 1
+
+      assert(c == len(mkpts))
+
+      idxs = []
+      for p in mkpts:
+        x = np.floor(float(p[0]))
+        y = np.floor(float(p[1]))
+        idxs.append(m[x][y])
+
+      return idxs
+
+    extraction_size = (
+        config["feature_process_size_panorama"]
+        if is_panorama
+        else config["feature_process_size"]
+    )
+
+    h, w = shape[:2]
+    size = max(w, h)
+    final_size = (h, w)
+    if 0 < extraction_size < size:
+        final_size = h * max_size // size,  w * max_size // size
+
+    output0 = {
+        'keypoints': p1,
+        'descriptors': d1,
+        'image_size': final_size,
+    }
+    output1 = {
+        'keypoints': p2,
+        'descriptors': d2,
+        'image_size': final_size,
+    }
+    mkpts_0, mkpts_1 = xfeat.match_lighterglue(output0, output1)
+    idxs_0 = _kpt_idxs(output0, mkpts_0)
+    idxs_1 = _kpt_idxs(output1, mkpts_1)
+
+    # TODO can we justreturn the iterator?
+    return list(zip(idxs_0, idxs_1))
 
 
 def _convert_matches_to_vector(matches: List[Any]) -> List[Tuple[int, int]]:
