@@ -557,6 +557,8 @@ def extract_features_xfeat(
 
     output = xfeat.detectAndCompute(image, top_k = 4096)[0]
     points = output['keypoints'].numpy()
+    scores = output['scores'].numpy().reshape((4096, 1))
+    points = np.hstack((points, scores))
     desc = output['descriptors'].numpy()
 
     logger.debug("Found {0} points in {1}s".format(len(points), time.time() - t))
