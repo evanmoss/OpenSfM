@@ -559,7 +559,7 @@ def extract_features_xfeat(
     points = output['keypoints'].numpy()
     desc = output['descriptors'].numpy()
 
-    logger.debug("Found {0} points in {1}s".format(len(keypoints), time.time() - t))
+    logger.debug("Found {0} points in {1}s".format(len(points), time.time() - t))
     return points, desc
 
 def extract_features(
