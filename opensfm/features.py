@@ -551,7 +551,7 @@ def extract_features_orb(
 
 def extract_features_xfeat(
     image: np.ndarray, config: Dict[str, Any], features_count: int, xfeat: Any
-) -> Tuple[np.ndarray, np,.ndarray]:
+) -> Tuple[np.ndarray, np,ndarray]:
     logger.debug("Computing XFeats")
     t = time.time()
 
