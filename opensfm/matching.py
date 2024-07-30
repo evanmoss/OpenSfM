@@ -450,8 +450,8 @@ def _match_descriptors_impl(
             d1,
             features_data2.points,
             d2,
+            shape,
             overriden_config,
-            shape = shape,
             xfeat = xfeat)
     else:
         raise ValueError("Invalid matcher_type: {}".format(matcher_type))
@@ -772,10 +772,10 @@ def match_lightglue(
     d1: np.ndarray,
     p2: np.ndarray,
     d2: np.ndarray,
+    shape: np.ndarray,
     config: Dict[str, Any],
     maskij: Optional[np.ndarray] = None,
     xfeat: Any = None,
-    shape: np.ndarray,
 ) -> List[Tuple[int, int]]:
     """LighterGlue feature matching from https://github.com/verlab/accelerated_features
 
@@ -784,10 +784,10 @@ def match_lightglue(
         d1: feature descriptors of the first image
         p2: feature keypoints of the second image
         d2: feature descriptors of the second image
+        shape: shape of original image
         config: config parameters
         maskij: optional boolean mask of len(i descriptors) x len(j descriptors)
         xfeat: XFeat model
-        shape: shape of original image
     """
     assert(xfeat is not None)
 
