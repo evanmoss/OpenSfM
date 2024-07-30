@@ -439,7 +439,7 @@ def _match_descriptors_impl(
     elif matcher_type == "LIGHTGLUE":
         assert not symmetric_matching
         # assume im1.shape == im2.shape
-        im = io.imread(im1)
+        im = data.load_image(im1)
         xfeat = torch.hub.load(
             'verlab/accelerated_features',
             'XFeat',
@@ -450,7 +450,7 @@ def _match_descriptors_impl(
             d1,
             features_data2.points,
             d2,
-            shape,
+            im.shape,
             overriden_config,
             xfeat = xfeat)
     else:
