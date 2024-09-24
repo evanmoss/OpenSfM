@@ -181,8 +181,7 @@ class DataSet(DataSetBase):
                             return data[:, :, 0]
                         else:
                             instances = data[:, :, 1].astype(np.int16) + data[:, :, 2].astype(np.int16) * 256
-                            data = data[:, :, 0]
-                            return np.stack((data, instances), axis=1)
+                            return instances
 
                         # TODO we can optionally return also the instances and scores:
                         # instances = (
@@ -814,8 +813,7 @@ class UndistortedDataSet:
                         return data[:, :, 0]
                     else:
                         instances = data[:, :, 1].astype(np.int16) + data[:, :, 2].astype(np.int16) * 256
-                        data = data[:, :, 0]
-                        return np.stack((data, instances), axis=1)
+                        return instances
 
                     # TODO we can optionally return also the instances and scores:
                     # instances = (
