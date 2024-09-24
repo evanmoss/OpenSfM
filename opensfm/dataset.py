@@ -176,7 +176,13 @@ class DataSet(DataSetBase):
                     if data.ndim == 2:
                         return data
                     elif data.ndim == 3:
-                        return data[:, :, 0]
+                        # Check if instance IDs were embedded in the segmentation
+                        if (np.allclose(data[:, :, 0], data[:, :, 1]) and np.allclose(data[:, :, 0], data[:, :, 2])):
+                            return data[:, :, 0]
+                        else:
+                            instances = data[:, :, 1].astype(np.int16) + data[:, :, 2].astype(np.int16) * 256
+                            data = data[:, :, 0]
+                            return np.stack((data, instances), axis=1)
 
                         # TODO we can optionally return also the instances and scores:
                         # instances = (
@@ -803,7 +809,13 @@ class UndistortedDataSet:
                 if data.ndim == 2:
                     return data
                 elif data.ndim == 3:
-                    return data[:, :, 0]
+                    # Check if instance IDs were embedded in the segmentation
+                    if (np.allclose(data[:, :, 0], data[:, :, 1]) and np.allclose(data[:, :, 0], data[:, :, 2])):
+                        return data[:, :, 0]
+                    else:
+                        instances = data[:, :, 1].astype(np.int16) + data[:, :, 2].astype(np.int16) * 256
+                        data = data[:, :, 0]
+                        return np.stack((data, instances), axis=1)
 
                     # TODO we can optionally return also the instances and scores:
                     # instances = (
